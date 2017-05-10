@@ -1,0 +1,10 @@
+// app.js
+
+var http = require('http');
+var port = process.argv[2]||'3333';
+http.createServer(function(req,res) {
+    res.writeHead(200,{'Content-Type': 'text/html'});
+    res.write('<h1>Node.js</h1>');
+    res.end('<p>Hello World</p>');
+}).listen(port);
+console.log('HTTP server is listening at port '+port+'.');
