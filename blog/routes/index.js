@@ -1,41 +1,62 @@
-var express = require('express');
-var router = express.Router();
-var querystring = require('querystring');
+var router = require('express').Router();
+var crypto = require('crypto');
+var User = require('../models/user');
+//var flash = require('connect-flash');
 
-router.index = function(req,res) {
-    res.render('index', { title: 'Express' });
-};
+router.get('/', function(req,res,next) {
+    console.log("----------------------");
+    res.render('index',{title:'首页',layout:'layout'},function(err,html) {
+        if(err) {
+            console.log(err);
+            throw new Error(err);
+        }
+        else{
+            return res.send(html);
+        }
+    });
+});
 
+router.get('/reg', function(req,res) {
+    res.render('reg/reg', {title: '注册',layout:'layout'});
+});
 
-router.user = function(req,res) {
-    res.render('', { title: 'Express' });
-};
+router.post('/reg', function(req,res) {
+    //检验用户两次输入的口令是否一致
+    if(req.body['password-repeat'] != req.body['password']){
+        req.flash('error',  '两次输入的口令不一致');
+        return res.redirect('/reg');
+    }
+    //生成口令的散列值
+    var md5 = crypto.createHash('md5');
+    var password = md5.update(req.body.password).digest('base64');
 
-router.post = function(req,res) {
-    res.render('post', { title: 'Express' });
-};
-
-router.reg = function(req,res) {
-    res.render('', { title: 'Express' });
-};
-
-router.doReg = function(req,res) {
-    res.render('', { title: 'Express' });
-};
-
-router.login = function(req,res) {
-    res.render('login', { title: 'Express' });
-};
-
-router.doLogin = function(req,res) {
-    res.render('doLogin', { title: 'Express' });
-};
-
-router.logout = function(req,res) {
-    res.render('logout', { title: 'Express' });
-};
+    var newUser = new User({
+        name:req.body.username,
+        password:password
+    });
+    User.get(newUser.name, function(err, user) {
+        if(user) {
+            err = '用户名已存在';
+        }
+        if(err) {
+            req.flash('error',err);
+            return res.redirect('/reg');
+        }
+        //如果不存在则新增用户
+        newUser.save(function(err) {
+            if(err) {
+                req.flash('error',err);
+                return res.redirect('/reg');
+            }
+            req.session.usr = newUser;
+            req.flash('success', '注册成功');
+            res.redirect('/');
+        });
+    });
+});
 
 module.exports = router;
+
 /*
  // GET home page.
 router.get('/', function(req, res, next) {
